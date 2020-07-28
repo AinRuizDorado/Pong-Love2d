@@ -1,6 +1,10 @@
 
 -- Include the library push to create a virtual resolution that match with the old atari systems
 push = require 'push'
+Class = require 'class'
+require("Ball")
+require("Paddle")
+
 -- sets the true resolution that the player will be seeing in a screen 16:9
 WINDOW_WIDTH = 1270
 WINDOW_HEIGHT = 720
@@ -18,6 +22,11 @@ function love.load()
 
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
+    -- seed the RNG so that calls to random
+    -- use the current time
+    math.randomseed(os.time())
+
+
     -- I don't want to use Arial default font so i downloaded a custom one from google front
     -- https://fonts.google.com/specimen/Red+Rose?preview.text=PONG&preview.text_type=custom&preview.size=43
     textFont = love.graphics.newFont('RedRose-Bold.ttf', 13)
@@ -31,13 +40,12 @@ function love.load()
         vsync = true
     })
 
-    -- initialize score variables, used for rendering on the screen and keeping tracking of the winner
-    player1Score = 0
-    player2Score = 0
+    player1 = Paddle(10, 30, 5, 20)
+    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, 5, 20)
 
-    -- paddle positions on the Y axis
-    player1Y = 25
-    player2Y = VIRTUAL_HEIGHT - 50
+    ball = Ball(VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
+    
+    gameState = 'start'
 
 end
 
@@ -45,26 +53,41 @@ end
 function love.update(dt)
     -- player 1 movement
     if love.keyboard.isDown('w') then
-        -- going up, player1Y plus negative paddle speed witch is going to decrese in the Y axis so it moves UP multiply by delta time
-        player1Y = player1Y + -PADDLE_SPEED * dt
+        player1.dy = -PADDLE_SPEED
     elseif love.keyboard.isDown('s') then
-        -- body
-        player1Y = player1Y + PADDLE_SPEED * dt
+        player1.dy = PADDLE_SPEED
+    else
+        player1.dy = 0
     end
 
-        -- player 2 movement
     if love.keyboard.isDown('up') then
-        player2Y = player2Y + -PADDLE_SPEED * dt
+        player2.dy = -PADDLE_SPEED
     elseif love.keyboard.isDown('down') then
-        -- body
-        player2Y = player2Y + PADDLE_SPEED * dt
+        player2.dy = PADDLE_SPEED
+    else
+        player2.dy = 0
     end
+
+    if gameState == 'play' then
+        ball:update(dt)
+    end
+
+    player1:update(dt)
+    player2:update(dt)
 end
 
 
 function love.keypressed(key)
     if key == 'escape' then 
         love.event.quit();
+    elseif key == 'enter' or key == 'return' then
+        if gameState == 'start' then
+            gameState = 'play'
+        else
+            gameState = 'start'
+
+            ball:reset()
+        end
     end
 end
 
@@ -75,30 +98,40 @@ function love.draw()
     love.graphics.clear(40/255, 45/255, 52/255, 255/255)
     love.graphics.setFont(textFont)
     --[[ PrintF (name, limit, x, y, width, align) ]]
-    love.graphics.printf(
-        "PONG!",
-        '0',
-        20,
-        VIRTUAL_WIDTH,
-        'center'
-    )
+    if gameState == 'start' then
+        love.graphics.printf(
+            "GET READY!",
+            '0',
+            20,
+            VIRTUAL_WIDTH,
+            'center'
+        )
+    else
+        love.graphics.printf(
+            "PONG!",
+            '0',
+            20,
+            VIRTUAL_WIDTH,
+            'center'
+        )
+    end
 
     -- draw score and switch to font to draw before actually printing
-    love.graphics.setFont(scoreFont)
+--[[     love.graphics.setFont(scoreFont)
     love.graphics.print(tostring(player1Score), VIRTUAL_WIDTH / 2 - 50,
     VIRTUAL_HEIGHT / 3)
     love.graphics.print(tostring(player2Score), VIRTUAL_WIDTH / 2 + 30,
-    VIRTUAL_HEIGHT / 3)
+    VIRTUAL_HEIGHT / 3) ]]
 
     --[[ The paddles will be a simple Rectangle affected by the virtual resolution as the ball that we draw on the screen at certain points ]]
     -- render the first paddle (left)
-    love.graphics.rectangle('fill', 10, player1Y, 5, 20)
+    player1:render()
 
     -- render the second one (right)
-    love.graphics.rectangle('fill', VIRTUAL_WIDTH - 10, player2Y, 5, 20)
+    player2:render()
 
     -- ball render
-    love.graphics.rectangle('fill', VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
+    ball:render()
 
     -- end rendering the virtual resolution
     push:finish()
