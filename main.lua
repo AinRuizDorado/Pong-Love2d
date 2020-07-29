@@ -53,7 +53,7 @@ function love.load()
     --[[setup screen takes a virtual WIDTH and a Virtual Height to rendering in a fixed screen of 1270 x 720 ]]
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
         fullscreen = false,
-        resizable = false,
+        resizable = true,
         vsync = true
     })
 
@@ -66,6 +66,11 @@ function love.load()
     
     gameState = 'start'
 
+end
+
+
+function love.resize(w, h)
+    push:resize(w, h)
 end
 
 -- love.update will execute at every frame, it takes a delta time witch is going to be executed a fraccion of a second
